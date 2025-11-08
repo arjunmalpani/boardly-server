@@ -1,12 +1,13 @@
 import jwt from 'jsonwebtoken';
 import fs from "fs/promises";
 import cloudinary from "../configs/cloudinary.js";
+// todo: migrate from cookies to Authorization header bearer token
 export const generateToken = (userId, res) => {
     const token = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' })
     res.cookie('token', token, {
         maxAge: 7 * 24 * 60 * 60 * 1000,
         httpOnly: true, // prevent XSS
-        sameSite: "strict", // prevent CFRS
+        // sameSite: "strict", // prevent CFRS
         secure: process.env.NODE_ENV === "production"
     })
 };
