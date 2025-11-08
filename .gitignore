@@ -142,4 +142,3 @@ vite.config.ts.timestamp-*
 package-lock.json
 .github/copilot-instructions.md
 .github/prompts/
-uploads/*
