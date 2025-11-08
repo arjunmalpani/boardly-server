@@ -3,7 +3,6 @@ import "dotenv/config";
 import express from "express";
 import { connectDB } from './libs/db.js';
 import cors from "cors";
-import { v4 as uuidv4 } from 'uuid';
 import { app, server } from "./libs/socket.js";
 import cookieParser from "cookie-parser";
 
@@ -11,6 +10,7 @@ import cookieParser from "cookie-parser";
 
 import authRouter from './routes/auth.route.js';
 import spaceRouter from './routes/space.route.js';
+import morgan from "morgan";
 
 
 
@@ -24,14 +24,20 @@ app.use(
         credentials: true,
     })
 );
+app.use(morgan("[API] :method :url :status :res[content-length] - :response-time ms"))
 // Routes
 app.use('/api/auth', authRouter)
 app.use('/api/space', spaceRouter)
-
+app.all('*path', (req, res) => {
+    res.status(404).json({
+        success: false,
+        message: "Resource not found"
+    });
+});
 const startServer = async () => {
     await connectDB()
     server.listen(port, () => {
-        console.log(`The Server is running at http://localhost:${port}`)
+        console.log(`[SERVER] Server Started http://localhost:${port}`)
     })
 }
 startServer()

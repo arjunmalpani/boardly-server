@@ -17,6 +17,7 @@ async function throttledSpaceSave(spaceId, snapshot) {
     setTimeout(async () => {
         const latestSnapshot = saveQueue.get(spaceId);
         saveQueue.delete(spaceId); // Clear the queue
+        console.log(latestSnapshot);
 
         try {
             // Find by our custom 'spaceId' and update the 'boardState' field
@@ -24,63 +25,72 @@ async function throttledSpaceSave(spaceId, snapshot) {
                 { spaceId: spaceId },
                 { boardState: latestSnapshot }
             );
-            console.log(`[Socket] Saved board ${spaceId}`);
+            console.log(`[SOCKET] Saved board ${spaceId}`);
         } catch (err) {
-            console.error(`[Socket] Failed to save board ${spaceId}:`, err);
+            console.error(`[SOCKET] Failed to save board ${spaceId}:`, err);
         }
     }, SAVE_INTERVAL_MS);
 }
 
 export const setupSocketIO = (io) => {
     io.on("connection", (socket) => {
-        console.log(`[Socket] User connected: ${socket.id}`);
+        console.log(`[SOCKET] User connected: ${socket.id}`);
 
         socket.on("join-room", (spaceId) => {
             socket.join(spaceId);
-            console.log(`[Socket] User ${socket.id} joined room ${spaceId}`);
+            console.log(`[SOCKET] User ${socket.id} joined room ${spaceId}`);
         });
 
-        // --- FIX 1: Correctly handle 'shape-changes' for real-time sync ---
         socket.on("shape-changes", (data) => {
-            // Client sends { boardId, changes }
-            const { boardId, changes } = data; // <-- Changed from 'snapshot' to 'changes'
+            const { boardId, changes } = data;
 
             if (boardId && changes) {
-                // Broadcast the 'changes' object, not a snapshot object
-                // The client listener 'handleShapeBroadcast' expects this diff object
                 socket.to(boardId).emit("shape-broadcast", changes);
             }
-
-            // --- REMOVED saving logic from here ---
         });
 
-        // --- FIX 2: Add the missing listener for 'save-snapshot' ---
         socket.on("save-snapshot", (data) => {
-            // Client sends { boardId, snapshot }
             const { boardId, snapshot } = data;
 
             if (boardId && snapshot) {
-                // Now we call the throttled save function
                 throttledSpaceSave(boardId, snapshot);
             }
         });
 
 
-        // --- This presence handler was already correct ---
-        socket.on("presence-update", (data) => {
-            const { boardId, presence } = data;
-            if (boardId) {
-                socket.to(boardId).emit("presence-broadcast", { presence });
+        /** THERE IS SOME BUG -will fix later */
+        // socket.on("presence-update", (data) => {
+        //     console.log("presence update");
+
+        //     const { boardId, presence } = data;
+        //     if (boardId) {
+        //         console.log(data);
+        //         socket.to(boardId).emit("presence-broadcast", { presence });
+        //     }
+        // });
+        socket.on("send-message", async (data) => {
+            const { boardId, message } = data;
+            if (boardId && message) {
+                try {
+                    await Space.findOneAndUpdate(
+                        { spaceId: boardId },
+                        { $push: { messages: message } }
+                    );
+                    io.to(boardId).emit("receive-message", message);
+
+                    console.log(`[Socket] Saved message for board ${boardId}`);
+                } catch (err) {
+                    console.error(`[Socket] Failed to save message for board ${boardId}:`, err);
+                }
             }
         });
-
         socket.on("leave-room", (spaceId) => {
             socket.leave(spaceId);
-            console.log(`[Socket] User ${socket.id} left room ${spaceId}`);
+            console.log(`[SOCKET] User ${socket.id} left room ${spaceId}`);
         });
 
         socket.on("disconnect", () => {
-            console.log(`[Socket] User disconnected: ${socket.id}`);
+            console.log(`[SOCKET] User disconnected: ${socket.id}`);
         });
     });
 };

@@ -4,9 +4,9 @@ export const connectDB = async () => {
         await mongoose.connect(process.env.MONGO_URI, {
             dbName: "boardly",
         });
-        console.log("✅ MongoDB connected");
+        console.log("[DATABASE] SUCCESS Connected to MongoDB");
     } catch (error) {
-        console.error("❌ MongoDB connection failed:", error.message);
+        console.error("[DATABASE] FAILED Connection to MongoDB ", error.message);
         process.exit(1);
     }
 };

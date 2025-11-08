@@ -23,27 +23,30 @@ export const registerController = async (req, res) => {
         }
 
         // Try/catch for file upload and deletion
-        let avatarUrl;
-        if (req.file) {
-            try {
-                avatarUrl = await uploadToCloudinary(req.file, "avatars")
-            } catch (fileErr) {
-                console.error("Error uploading avatars:", fileErr);
-                return res.status(500).json({ success: false, message: 'Error uploading avatar' });
-            }
-        }
+
         const newUser = new User({
-            username, password, displayName, avatar: avatarUrl,
+            username, password, displayName,
         });
         await newUser.save();
         generateToken(newUser._id, res);
         const userToSend = newUser.toObject();
         delete userToSend.password;
-        return res.status(201).json({
+        res.status(201).json({
             success: true, message: 'User created Successfully', user: userToSend
         });
+        if (req.file) {
+            console.time("Cloudinary upload");
+            uploadToCloudinary(req.file, "avatars")
+                .then(async (url) => {
+                    newUser.avatar = url;
+                    await newUser.save();
+                    console.timeEnd("Cloudinary upload");
+                })
+                .catch(err => console.error("Avatar upload failed:", err));
+        }
     } catch (error) {
         console.error("Error in register controller", error);
+        // MISSING: Should return error response in catch block
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
@@ -134,8 +137,10 @@ export const profileController = async (req, res) => {
                 success: false, message: "User not found"
             })
         }
+        const userToSend = user.toObject();
+        delete userToSend.password;
         res.status(200).json({
-            success: true, message: "Profile Details", user,
+            success: true, message: "Profile Details", user: userToSend,
         })
     } catch (error) {
         console.error('Error in profile controller', error);

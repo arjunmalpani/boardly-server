@@ -24,8 +24,7 @@ export const loginSchema = Joi.object({
     username: Joi.string().trim().required().messages({
         "string.empty": "Username is required",
     }),
-    password: Joi.string().min(8).required().messages({
-        "string.min": "Password must be at least 6 characters long",
+    password: Joi.string().required().messages({
         "string.empty": "Password is required",
     }),
 });
