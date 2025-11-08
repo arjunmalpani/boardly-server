@@ -14,8 +14,7 @@ import spaceRouter from './routes/space.route.js';
 
 
 
-const port = process.env.PORT || 3000
-console.log("CLIENT_URL:", process.env.CLIENT_URL);
+const port = process.env.PORT || 3000;
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())

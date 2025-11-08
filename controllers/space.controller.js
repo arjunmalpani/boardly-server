@@ -35,8 +35,6 @@ export const getMySpacesController = async (req, res) => {
 export const getSpaceByIdController = async (req, res) => {
     try {
         const { spaceId } = req.params;
-        console.log(spaceId);
-
         const space = await Space.findOne({ spaceId });
         if (!space) {
             return res
@@ -73,7 +71,6 @@ export const inviteUserToSpaceController = async (req, res) => {
                 .status(404)
                 .json({ success: false, message: "Space not found" });
         }
-        console.log(space.host, hostId);
 
         // Check if the requester is the host
         if (space.host.toString() !== hostId) {

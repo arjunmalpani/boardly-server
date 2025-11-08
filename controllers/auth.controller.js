@@ -35,7 +35,6 @@ export const registerController = async (req, res) => {
         const newUser = new User({
             username, password, displayName, avatar: avatarUrl,
         });
-        console.log(newUser);
         await newUser.save();
         generateToken(newUser._id, res);
         const userToSend = newUser.toObject();
@@ -45,7 +44,6 @@ export const registerController = async (req, res) => {
         });
     } catch (error) {
         console.error("Error in register controller", error);
-        // MISSING: Should return error response in catch block
         return res.status(500).json({ success: false, message: 'Internal server error' });
     }
 }
@@ -66,7 +64,6 @@ export const loginController = async (req, res) => {
                 success: false, message: "Invalid Credentials."
             })
         }
-        console.log(password);
 
         const isMatched = await bcrypt.compare(password, user.password);
         if (!isMatched) {
@@ -79,7 +76,7 @@ export const loginController = async (req, res) => {
         const userTosend = user.toObject();
         delete userTosend.password;
         res.status(200).json({
-            success: true, message: "Logged in successfully", user:userTosend,
+            success: true, message: "Logged in successfully", user: userTosend,
         })
 
     } catch (error) {
@@ -91,7 +88,6 @@ export const loginController = async (req, res) => {
 export const logoutController = async (req, res) => {
     try {
         const accessToken = req.cookies.token;
-        console.log(accessToken);
 
         if (!accessToken) {
             return res.sendStatus(204);
